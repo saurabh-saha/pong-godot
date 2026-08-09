@@ -108,6 +108,36 @@ an evaluation after every stage. This is what actually produced `models/best_mod
 above — a single flat `--timesteps 100000` call won't reproduce it; continuing
 training over millions of steps did.
 
+**Does it train from zero, or build on the model already in this repo?**
+By default, **from zero** — `scripts/curriculum.py` always starts stage 1 with a
+fresh policy; it does not know about `models/best_model.zip` unless you tell it to.
+To instead build further on top of the model already checked in:
+
+```bash
+uv run python scripts/curriculum.py --init-model models/best_model.zip --start-stage 4
+```
+
+`--init-model` seeds the curriculum from an existing model instead of training stage 1
+from scratch. `--start-stage` (0-indexed: 0=`stage1_random`, 1=`stage2_tracking`,
+2=`stage3_tracking`, 3=`stage4_tracking`, 4=`stage5_tracking`) skips the early stages
+you've already effectively done, so you're not redoing the random/tracking basics —
+just continuing further training on the current best model. `--start-stage > 0`
+requires `--init-model`.
+
+**How much time does the full curriculum take?**
+The five stages train for 500k + 500k + 3M + 10M + 15M = **29,000,000 timesteps**
+total. On the machine this was developed on (Apple M3, CPU-only, single environment,
+no parallelism), simulation throughput varied between roughly 3,500 and 6,800 steps/sec
+across runs — so the full curriculum takes **roughly 1.5-2.5 hours**, plus a few minutes
+for the evaluation calls between stages (skip those with `--skip-eval` to save a little
+time). Actual time depends heavily on your CPU and what else is running; there's no
+GPU requirement since the policy network is tiny (`net_arch=[64, 64]`) and the physics
+sim is the bottleneck, not the neural network.
+
+Running a single stage on its own (e.g. just `scripts/train.py --timesteps 10000000`)
+is proportionally faster — timesteps scale roughly linearly with wall-clock time at a
+given throughput.
+
 ## Watch
 
 ```bash

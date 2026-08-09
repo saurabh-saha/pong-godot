@@ -59,11 +59,30 @@ def main() -> None:
         action="store_true",
         help="Skip the intermediate evaluate.py calls between stages (faster, less visibility).",
     )
+    parser.add_argument(
+        "--init-model",
+        type=str,
+        default=None,
+        help="Continue the curriculum from an existing model (e.g. models/best_model.zip) "
+        "instead of training stage 1 from scratch. Combine with --start-stage to resume "
+        "partway through instead of redoing the random/tracking stages you already have.",
+    )
+    parser.add_argument(
+        "--start-stage",
+        type=int,
+        default=0,
+        help="Skip earlier stages and start at this stage index (0 = stage1_random, "
+        "1 = stage2_tracking, etc.). Requires --init-model so there's something to build on.",
+    )
     args = parser.parse_args()
 
-    previous_model: str | None = None
+    if args.start_stage > 0 and not args.init_model:
+        parser.error("--start-stage > 0 requires --init-model")
 
-    for stage_name, opponent, timesteps, checkpoint_freq in STAGES:
+    previous_model: str | None = args.init_model
+    stages = list(enumerate(STAGES))[args.start_stage :]
+
+    for stage_index, (stage_name, opponent, timesteps, checkpoint_freq) in stages:
         stage_dir = os.path.join(args.model_dir, stage_name)
         print(f"\n=== {stage_name}: {timesteps:,} steps vs {opponent} ===")
 
