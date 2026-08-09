@@ -50,6 +50,24 @@ probabilities — by repeatedly playing episodes, then nudging the policy toward
 that led to higher reward, while limiting how much it changes per update (for stability).
 This project uses Stable-Baselines3's PPO implementation rather than writing PPO from scratch.
 
+## Pretrained model
+
+[`models/best_model.zip`](models/best_model.zip) is a trained model checked into this repo (145 KB — small enough
+that Git handles it fine with no LFS needed). It was produced by a training curriculum — start against a random
+opponent, then keep continuing training against the tracking bot for progressively longer runs — rather than a
+single training call. Evaluated over 100 episodes:
+
+| Opponent | Win rate | Avg reward |
+|---|---|---|
+| tracking bot | 66% | +15.35 |
+| random bot   | 98% | +22.63 |
+
+Try it immediately with:
+
+```bash
+uv run python scripts/watch.py --model models/best_model.zip --opponent tracking
+```
+
 ## Install
 
 ```bash
@@ -63,10 +81,32 @@ uv run python scripts/train.py --timesteps 100000 --opponent tracking
 ```
 
 Options: `--timesteps`, `--opponent {random,tracking,self_play}`, `--seed`,
-`--model-dir` (default `models/`), `--checkpoint-frequency`.
+`--model-dir` (default `models/`), `--checkpoint-frequency`, `--ent-coef`
+(entropy bonus; raise it if training collapses to always picking one action),
+`--init-model <path>` (continue training an existing model instead of starting
+fresh — this is how the curriculum below builds each stage on the last),
+`--eval-frequency` / `--eval-episodes` (how often, and over how many episodes,
+to deterministically re-evaluate the policy during training).
 
-Training is headless by default and saves periodic checkpoints plus a final
-`models/best_model.zip`.
+Training is headless by default and saves periodic checkpoints, a `final_model.zip`
+(whatever the last training step produced), and a `best_model.zip` — the checkpoint
+with the **best evaluated performance seen at any point during training**, not just
+the final one. This matters because PPO training reward doesn't always improve
+monotonically over very long runs; `best_model.zip` protects against a long run
+wandering into a worse policy right at the end.
+
+### Curriculum training
+
+```bash
+uv run python scripts/curriculum.py
+```
+
+Runs the full staged curriculum in one command: train vs `random`, then continue
+that same model vs `tracking` across several progressively longer runs (each stage
+picking up from the previous stage's `best_model.zip` via `--init-model`), printing
+an evaluation after every stage. This is what actually produced `models/best_model.zip`
+above — a single flat `--timesteps 100000` call won't reproduce it; continuing
+training over millions of steps did.
 
 ## Watch
 

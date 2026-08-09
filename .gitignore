@@ -14,3 +14,4 @@ models/**/*.zip
 models/**/*.pt
 models/**/*.npz
 !models/.gitkeep
+!models/best_model.zip
