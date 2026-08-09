@@ -2,6 +2,8 @@
 
 A classic Pong game built in Godot 4.7, using GDScript only.
 
+![Pong gameplay screenshot](screenshot.png)
+
 ## Gameplay
 
 - Left paddle vs. right paddle, ball bounces between them.
