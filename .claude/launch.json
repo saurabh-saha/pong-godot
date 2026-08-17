@@ -4,7 +4,7 @@
     {
       "name": "pong-web",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8123", "--directory", "web"],
+      "runtimeArgs": ["-m", "http.server", "8123", "--directory", "docs"],
       "port": 8123
     }
   ]
