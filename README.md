@@ -12,6 +12,10 @@ The computer opponent is a neural network (small tanh MLP) trained with reinforc
 (PPO), originally inside a Godot-provided environment, later moved to a fast headless Python
 simulation for training. See [`rl/README.md`](rl/README.md) for the full training write-up.
 
+New to ML/RL terms like neural networks, PPO, or backpropagation? Read
+**[Pip Learns to Play](docs/pip_learns_to_play.pdf)** — a short story that explains all of it
+using this project's own AI opponent as the example.
+
 ## Structure
 
 - [`game/`](game/) — the Godot Pong game ([game/README.md](game/README.md))
