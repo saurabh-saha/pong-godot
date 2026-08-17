@@ -1,0 +1,17 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Model artifacts
+models/**/*.zip
+models/**/*.pt
+models/**/*.npz
+!models/.gitkeep
+!models/best_model.zip
