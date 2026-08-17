@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pong</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #0b0b0f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    color: #eee;
+  }
+  #wrap { text-align: center; }
+  canvas {
+    background: #000;
+    display: block;
+    border: 2px solid #333;
+    image-rendering: pixelated;
+  }
+  #msg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    white-space: pre-line;
+    font-size: 20px;
+    pointer-events: none;
+  }
+  #hint { margin-top: 8px; font-size: 13px; color: #888; }
+</style>
+</head>
+<body>
+<div id="wrap" style="position: relative;">
+  <canvas id="game" width="1152" height="648"></canvas>
+  <div id="msg"></div>
+  <div id="hint">Left paddle: W/S &nbsp;&middot;&nbsp; Right paddle: Up/Down &nbsp;&middot;&nbsp; 1 = Player vs Player &nbsp;&middot;&nbsp; 2 = Player vs Computer &nbsp;&middot;&nbsp; Space = restart</div>
+</div>
+<script src="ai_policy.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
