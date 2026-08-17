@@ -8,9 +8,9 @@
 2. Press **2** for Player vs Computer (or **1** for Player vs Player)
 3. Move your paddle with **W** / **S** (right paddle uses **↑** / **↓** if not AI-controlled)
 
-The computer opponent is a neural network — trained with reinforcement learning (PPO, ReLU/tanh MLP)
-originally inside a Godot-provided environment, later moved to a fast headless Python simulation for
-training. See [`rl/README.md`](rl/README.md) for the full training write-up.
+The computer opponent is a neural network (small tanh MLP) trained with reinforcement learning
+(PPO), originally inside a Godot-provided environment, later moved to a fast headless Python
+simulation for training. See [`rl/README.md`](rl/README.md) for the full training write-up.
 
 ## Structure
 
