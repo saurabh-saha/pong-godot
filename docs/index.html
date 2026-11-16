@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pong</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pong vs a Neural Net</title>
 <meta name="description" content="Pong with a reinforcement-learning AI opponent — play vs a friend or the trained computer player.">
 <meta property="og:title" content="Pong — with a reinforcement-learning AI opponent">
 <meta property="og:description" content="Play vs a friend or a computer opponent trained with reinforcement learning.">
@@ -15,43 +15,218 @@
 <meta name="twitter:description" content="Play vs a friend or a computer opponent trained with reinforcement learning.">
 <meta name="twitter:image" content="https://saurabh-saha.github.io/pong-godot/og-image.png">
 <style>
+  :root {
+    --bg: #07070c;
+    --panel: #12121c;
+    --line: #26263a;
+    --text: #ececf4;
+    --muted: #8a8aa3;
+    --left: #22d3ee;   /* left paddle / you */
+    --right: #f472b6;  /* right paddle / AI or player 2 */
+  }
+  * { box-sizing: border-box; }
   html, body {
     margin: 0;
-    height: 100%;
-    background: #0b0b0f;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: -apple-system, "Segoe UI", sans-serif;
-    color: #eee;
+    min-height: 100%;
+    background: radial-gradient(ellipse at top, #141428 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
-  #wrap { text-align: center; }
+  body { display: flex; flex-direction: column; align-items: center; padding: 16px 16px 24px; }
+  header { text-align: center; margin: 4px 0 12px; }
+  h1 {
+    margin: 0;
+    font: 800 clamp(22px, 4vw, 34px)/1.1 ui-monospace, "SF Mono", Menlo, monospace;
+    letter-spacing: 0.08em;
+  }
+  h1 .vs { color: var(--muted); font-weight: 400; }
+  h1 .ai { color: var(--right); }
+  header p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+
+  #stage { position: relative; width: min(100%, 1152px); }
   canvas {
-    background: #000;
     display: block;
-    border: 2px solid #333;
-    image-rendering: pixelated;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1152 / 648;
+    background: #000;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 0 0 1px #000, 0 20px 60px -20px rgba(34, 211, 238, 0.25);
+    touch-action: none; /* we handle touch drags ourselves */
   }
-  #msg {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+
+  /* Overlays sit on top of the canvas */
+  .overlay {
+    position: absolute; inset: 0;
+    display: none;
+    align-items: center; justify-content: center;
+    background: rgba(5, 5, 10, 0.78);
+    backdrop-filter: blur(2px);
+    border-radius: 12px;
+    padding: 16px;
     text-align: center;
-    white-space: pre-line;
-    font-size: 20px;
+  }
+  .overlay.show { display: flex; }
+  .panel { max-width: 640px; width: 100%; }
+  .panel h2 { margin: 0 0 6px; font-size: clamp(20px, 3.2vw, 30px); }
+  .panel p { margin: 0 0 16px; color: var(--muted); font-size: 14px; }
+
+  .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .modes { grid-template-columns: 1fr; } }
+  .mode {
+    cursor: pointer;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px;
+    color: var(--text);
+    text-align: left;
+    font: inherit;
+    transition: transform .1s ease, border-color .15s ease;
+  }
+  .mode:hover, .mode:focus-visible { border-color: var(--left); transform: translateY(-2px); outline: none; }
+  .mode .title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 17px; }
+  .mode .title .emoji { font-size: 22px; }
+  .mode .title kbd { margin-left: auto; }
+  .mode .desc { color: var(--muted); font-size: 13px; margin: 6px 0 10px; }
+  .controls { display: grid; gap: 6px; font-size: 13px; }
+  .controls .row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .dot.left { background: var(--left); }
+  .dot.right { background: var(--right); }
+
+  kbd {
+    display: inline-block;
+    min-width: 24px;
+    padding: 2px 7px;
+    border: 1px solid #3a3a55;
+    border-bottom-width: 3px;
+    border-radius: 6px;
+    background: #1c1c2b;
+    color: var(--text);
+    font: 600 12px/1.4 ui-monospace, Menlo, monospace;
+    text-align: center;
+  }
+  .btn {
+    cursor: pointer;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font: 600 15px/1 inherit;
+    color: #05050a;
+    background: var(--left);
+  }
+  .btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .small { font-size: 12px; color: var(--muted); margin-top: 12px; }
+
+  #countdown {
+    position: absolute; inset: 0; display: none;
+    align-items: center; justify-content: center;
+    font: 800 clamp(48px, 12vw, 120px)/1 ui-monospace, Menlo, monospace;
+    color: #fff; text-shadow: 0 0 30px rgba(34, 211, 238, 0.6);
     pointer-events: none;
   }
-  #hint { margin-top: 8px; font-size: 13px; color: #888; }
+  #countdown.show { display: flex; }
+
+  /* Under the game: short control reminder + pause button */
+  #bar {
+    width: min(100%, 1152px);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    margin-top: 10px; font-size: 13px; color: var(--muted);
+  }
+  #bar .keys { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+  #pauseBtn { padding: 6px 12px; font-size: 13px; }
+
+  /* Phones: menus cover the whole screen (the table is short in portrait) */
+  @media (max-width: 700px) {
+    .overlay { position: fixed; border-radius: 0; z-index: 20; background: rgba(5, 5, 10, 0.94); overflow-y: auto; align-items: flex-start; padding-top: 40px; }
+    #countdown { font-size: 64px; }
+  }
+  #rotateTip { display: none; margin-top: 10px; font-size: 13px; color: var(--muted); }
+  @media (hover: none) and (orientation: portrait) { #rotateTip { display: block; } }
+
+  footer { margin-top: 18px; font-size: 13px; color: var(--muted); text-align: center; line-height: 1.8; }
+  footer a { color: #8ab4f8; }
 </style>
 </head>
 <body>
-<div id="wrap" style="position: relative;">
-  <canvas id="game" width="1152" height="648"></canvas>
-  <div id="msg"></div>
-  <div id="hint">Left paddle: W/S &nbsp;&middot;&nbsp; Right paddle: Up/Down &nbsp;&middot;&nbsp; 1 = Player vs Player &nbsp;&middot;&nbsp; 2 = Player vs Computer &nbsp;&middot;&nbsp; Space = restart</div>
-  <div id="hint" style="margin-top: 4px;"><a href="pip_learns_to_play.pdf" style="color: #8ab4f8;">How the computer opponent learned to play &rarr;</a></div>
+<header>
+  <h1>PONG <span class="vs">vs</span> <span class="ai">A NEURAL NET</span></h1>
+  <p>The computer player is a small neural network that taught itself Pong with reinforcement learning.</p>
+</header>
+
+<div id="stage">
+  <canvas id="game" width="1152" height="648" aria-label="Pong game"></canvas>
+
+  <!-- Start: choose a mode -->
+  <div class="overlay show" id="startScreen">
+    <div class="panel">
+      <h2>Choose how to play</h2>
+      <p>First to 5 points wins. Click a card, or press its number key.</p>
+      <div class="modes">
+        <button class="mode" data-mode="pvc">
+          <div class="title"><span class="emoji">🤖</span> Play vs Computer <kbd>2</kbd></div>
+          <div class="desc">You're the <b style="color:var(--left)">left</b> paddle. The AI plays right.</div>
+          <div class="controls">
+            <div class="row"><span class="dot left"></span> Move: <kbd>W</kbd><kbd>S</kbd> or <kbd>↑</kbd><kbd>↓</kbd></div>
+            <div class="row">📱 On a phone: drag up and down</div>
+          </div>
+        </button>
+        <button class="mode" data-mode="pvp">
+          <div class="title"><span class="emoji">👥</span> 2 Players <kbd>1</kbd></div>
+          <div class="desc">Same keyboard, one player on each side.</div>
+          <div class="controls">
+            <div class="row"><span class="dot left"></span> Left: <kbd>W</kbd><kbd>S</kbd></div>
+            <div class="row"><span class="dot right"></span> Right: <kbd>↑</kbd><kbd>↓</kbd></div>
+            <div class="row">📱 On a phone: each player drags on their half</div>
+          </div>
+        </button>
+      </div>
+      <div class="small">During a game: <kbd>P</kbd> or <kbd>Esc</kbd> pauses.</div>
+    </div>
+  </div>
+
+  <!-- Paused -->
+  <div class="overlay" id="pauseScreen">
+    <div class="panel">
+      <h2>Paused</h2>
+      <p>Press <kbd>P</kbd> or <kbd>Esc</kbd> to keep playing.</p>
+      <div class="actions">
+        <button class="btn" id="resumeBtn">Resume</button>
+        <button class="btn secondary" data-action="menu">Change mode</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game over -->
+  <div class="overlay" id="overScreen">
+    <div class="panel">
+      <h2 id="overTitle">You win!</h2>
+      <p id="overScore">5 – 3</p>
+      <div class="actions">
+        <button class="btn" id="againBtn">Play again <kbd>Space</kbd></button>
+        <button class="btn secondary" data-action="menu">Change mode <kbd>M</kbd></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="countdown">3</div>
 </div>
+
+<div id="rotateTip">📱 Turn your phone sideways for a bigger table.</div>
+
+<div id="bar">
+  <div class="keys" id="barKeys"></div>
+  <button class="btn secondary" id="pauseBtn" hidden>Pause <kbd>P</kbd></button>
+</div>
+
+<footer>
+  <a href="pip_learns_to_play.pdf">How the computer opponent learned to play →</a><br>
+  <a href="https://github.com/saurabh-saha/pong-godot">Source on GitHub</a>
+</footer>
+
 <script src="ai_policy.js"></script>
 <script src="game.js"></script>
 </body>

@@ -5,8 +5,9 @@
 **[https://saurabh-saha.github.io/pong-godot/](https://saurabh-saha.github.io/pong-godot/)**
 
 1. Open the link
-2. Press **2** for Player vs Computer (or **1** for Player vs Player)
-3. Move your paddle with **W** / **S** (right paddle uses **↑** / **↓** if not AI-controlled)
+2. Click **Play vs Computer** (or **2 Players**), or press **2** / **1**
+3. Move your paddle with **W** / **S** or **↑** / **↓** (in 2-player mode the right paddle uses **↑** / **↓**). On a phone, drag up and down
+4. **P** or **Esc** pauses; first to 5 wins
 
 The computer opponent is a neural network (small tanh MLP) trained with reinforcement learning
 (PPO), originally inside a Godot-provided environment, later moved to a fast headless Python
